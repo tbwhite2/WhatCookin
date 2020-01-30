@@ -46,21 +46,24 @@ create_ingredient_features = function(dt){
 }
 
 create_TFICF = function(dt){
-  train_data_sum = train_data[,.(term_frequency = sum(term_frequency)),
+  dt_sum = dt[,.(term_frequency = sum(term_frequency)),
                               by = .(ingredient_token, cuisine)]
-  train_data_sum[,cuisine_frequency := uniqueN(.SD$cuisine),
+  dt_sum[,cuisine_frequency := uniqueN(.SD$cuisine),
                  by = .(ingredient_token)]
-  train_data_sum[,total_cuisines := uniqueN(cuisine)]
-  train_data_sum[,inverse_cuisine_frequency := log(total_cuisines/cuisine_frequency)]
-  train_data_sum[,TFICF := term_frequency*inverse_cuisine_frequency]
-  train_data_sum
+  dt_sum[,total_cuisines := uniqueN(cuisine)]
+  dt_sum[,inverse_cuisine_frequency := log(total_cuisines/cuisine_frequency)]
+  dt_sum[,TFICF := term_frequency*inverse_cuisine_frequency]
+  dt_sum
 }
 
-one_hot_encode_ingredients = function(dt, cutoff_TFICF = 80,top_ingredients = NA,save_top_ingredients = T){
+one_hot_encode_ingredients = function(dt, cutoff_TFICF = 80,top_ingredients = NA,
+                                      save_top_ingredients = T){
   
   if(is.na(top_ingredients)){
     top_ingredients = find_top_ingredients(dt, cutoff_TFICF = cutoff_TFICF)
-    saveRDS(top_ingredients)
+    if(save_top_ingredients){
+      saveRDS(top_ingredients,'./data/top_ingredients.RDS')
+    }
   }
   
   dt_reduced = dt[ingredient_token %in% top_ingredients]
@@ -74,7 +77,7 @@ one_hot_encode_ingredients = function(dt, cutoff_TFICF = 80,top_ingredients = NA
 }
 
 summarize_to_recipe_level = function(dt,...){
-  dt_ohe = one_hot_encode_ingredients(dt)
+  dt_ohe = one_hot_encode_ingredients(dt,...)
   dt = create_summary_features(dt)
   dt = merge(dt, dt_ohe, by = 'id')
   
@@ -94,4 +97,40 @@ find_top_ingredients = function(dt,cutoff_TFICF = 80){
   cutoff_TFICF = sort(TFICF_dt$TFICF,decreasing = T)[cutoff_TFICF]
   TFICF_dt[TFICF >= cutoff_TFICF, unique(ingredient_token)]
   
+}
+
+create_train_test = function(dt, test_prop = .3,write = F){
+  
+  dt[,cuisine := factor(cuisine)]
+  
+  dt[,validation_size := round(.N*test_prop),by = .(cuisine)]
+  
+  test_dt = dt[,lapply(.SD,sample,size = validation_size),
+                               by = .(cuisine),.SDcols = 'id']
+  test_dt = merge(dt, test_dt, by = c('id','cuisine'))
+  
+  train_data = fsetdiff(dt, test_dt)
+  
+  model_vars = names(train_data)[!names(train_data) %in% c('id','cuisine')]
+  
+  out = list(train_data_x = train_data[,model_vars, with = F],
+             train_data_y = train_data$cuisine,
+             test_dt_x = test_dt[,model_vars, with = F],
+             test_dt_y = test_dt$cuisine)
+  if(write){
+    for(name in names(out)){
+      write.csv(x = out[[name]],file = paste0('./data/',name,'.csv'))
+    }
+  }
+  
+  out
+
+}
+
+get_train_data = function(...){
+  train_data = jsonlite::read_json(path = './data/train.json',simplifyVector = T) %>% 
+    setDT() %>% 
+    expand_ingredients(min_frequency = 4) %>% 
+    create_ingredient_features() %>% 
+    summarize_to_recipe_level(...)
 }

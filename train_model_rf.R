@@ -4,6 +4,9 @@ library(magrittr)
 
 source('data_shaping_funcs.R')
 
+train_data = get_train_data(top_ingredients = readRDS('.data/top_ingredients.RDS'))
+
+
 train_data = jsonlite::read_json(path = './data/train.json',simplifyVector = T) %>% 
   setDT() %>% 
   expand_ingredients(min_frequency = 4) %>% 
@@ -20,12 +23,7 @@ validation_data = merge(train_data, validation_data, by = c('id','cuisine'))
 
 train_data = fsetdiff(train_data, validation_data)
 
-model_vars = names(train_data)[!names(train_data) %in% c('id','cuisine')
-train_data_x = train_data[,model_vars], with = F]
-train_data_y = train_data$cuisine
 
-validation_data_x = validation_data[,model_vars, with = F]
-validation_data_y = validation_data$cuisine
 rf = randomForest::randomForest(x = train_data_x,
                                 y = train_data_y)
 
