@@ -115,7 +115,7 @@ create_train_test = function(dt, test_prop = .3,write = F){
              test_dt_y = test_dt$cuisine)
   if(write){
     for(name in names(out)){
-      write.csv(x = out[[name]],file = paste0('./data/',name,'.csv'))
+      write.csv(x = out[[name]],file = paste0('./data/',name,'.csv'),row.names = F)
     }
   }
   
