@@ -56,16 +56,12 @@ create_TFICF = function(dt){
   dt_sum
 }
 
-one_hot_encode_ingredients = function(dt, cutoff_TFICF = 80,top_ingredients = NA,
-                                      save_top_ingredients = T){
-  
-  if(is.na(top_ingredients)){
-    top_ingredients = find_top_ingredients(dt, cutoff_TFICF = cutoff_TFICF)
-    if(save_top_ingredients){
-      saveRDS(top_ingredients,'./data/top_ingredients.RDS')
-    }
-  }
-  
+one_hot_encode_ingredients = function(dt, cutoff_TFICF = 80){
+
+  top_ingredients = find_top_ingredients(dt, cutoff_TFICF = cutoff_TFICF)
+
+  saveRDS(top_ingredients,'./data/top_ingredients.RDS')
+
   dt_reduced = dt[ingredient_token %in% top_ingredients]
   dt_ohe = dcast(dt_reduced, id ~ ingredient_token, fun = length)
   
@@ -127,10 +123,10 @@ create_train_test = function(dt, test_prop = .3,write = F){
 
 }
 
-get_train_data = function(...){
+get_train_data = function(){
   train_data = jsonlite::read_json(path = './data/train.json',simplifyVector = T) %>% 
     setDT() %>% 
     expand_ingredients(min_frequency = 4) %>% 
     create_ingredient_features() %>% 
-    summarize_to_recipe_level(...)
+    summarize_to_recipe_level()
 }
