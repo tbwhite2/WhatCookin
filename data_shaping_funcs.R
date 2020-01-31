@@ -105,12 +105,12 @@ create_train_test = function(dt, test_prop = .3,write = F){
                                by = .(cuisine),.SDcols = 'id']
   test_dt = merge(dt, test_dt, by = c('id','cuisine'))
   
-  train_data = fsetdiff(dt, test_dt)
+  train_dt = fsetdiff(dt, test_dt)
   
-  model_vars = names(train_data)[!names(train_data) %in% c('id','cuisine')]
+  model_vars = names(train_dt)[!names(train_dt) %in% c('id','cuisine')]
   
-  out = list(train_data_x = train_data[,model_vars, with = F],
-             train_data_y = train_data$cuisine,
+  out = list(train_dt_x = train_dt[,model_vars, with = F],
+             train_dt_y = train_dt$cuisine,
              test_dt_x = test_dt[,model_vars, with = F],
              test_dt_y = test_dt$cuisine)
   if(write){
