@@ -22,6 +22,10 @@ cuisine_freq_plot = ggplot(data = train_data_cuisine_sum, aes(x = cuisine, y = f
 
 cuisine_freq_plot
 
+mean(train_data[,uniqueN(ingredients), by = .(id)]$V1)
+#10.76
+uniqueN(train_data$ingredients)
+#6714
 ggsave(plot = cuisine_freq_plot,filename = "./plots/cuisine_freq_plot.png")
 
 #Find Frequencies of each ingredient
