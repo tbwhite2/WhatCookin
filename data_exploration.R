@@ -11,7 +11,11 @@ train_data = train_data[,lapply(.SD,function(x){unlist(x)}),
 #Duplications in ingredients exist, probably data error
 train_data = unique(train_data)
 #Find Frquencies of each cusine
-train_data_cuisine_sum = train_data[,.(frequency = .N), by = .(cuisine)]
+train_data_recipe_sum = train_data[,.(count_ingredients = .N), by = .(id, cuisine)]
+
+train_data_cuisine_sum = train_data_recipe_sum[,.(frequency = uniqueN(id),
+                                                  avg_ingredients = mean(count_ingredients),
+                                                  median_ingredients = median(count_ingredients)), by = .(cuisine)]
 train_data_cuisine_sum[,cuisine := factor(cuisine,
                                           levels = train_data_cuisine_sum$cuisine[order(-train_data_cuisine_sum$frequency)])]
 
