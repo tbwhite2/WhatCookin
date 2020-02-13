@@ -15,7 +15,7 @@ train_data_recipe_sum = train_data[,.(count_ingredients = .N), by = .(id, cuisin
 
 train_data_cuisine_sum = train_data_recipe_sum[,.(frequency = uniqueN(id),
                                                   avg_ingredients = mean(count_ingredients),
-                                                  median_ingredients = median(count_ingredients)), by = .(cuisine)]
+                                                  median_ingredients = as.double(median(count_ingredients))), by = .(cuisine)]
 train_data_cuisine_sum[,cuisine := factor(cuisine,
                                           levels = train_data_cuisine_sum$cuisine[order(-train_data_cuisine_sum$frequency)])]
 
@@ -30,7 +30,7 @@ mean(train_data[,uniqueN(ingredients), by = .(id)]$V1)
 #10.76
 uniqueN(train_data$ingredients)
 #6714
-ggsave(plot = cuisine_freq_plot,filename = "./plots/cuisine_freq_plot.png")
+ggsave(plot = cuisine_freq_plot,filename = "./plots/cuisine_freq_plot.png", limitsize = T)
 
 #Find Frequencies of each ingredient
 
