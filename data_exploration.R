@@ -111,12 +111,13 @@ train_data_sum[,TFICF := term_frequency*inverse_cuisine_frequency]
 setorder(train_data_sum, cuisine, -TFICF)
 thing = train_data_sum[,.SD[1:5], by = .(cuisine)]
 
-ggplot(data = thing[cuisine %in% c('southern_us','chinese','french')], aes(x = ingredient_token, y = TFICF, fill = cuisine)) + 
+sample_tficf = ggplot(data = thing[cuisine %in% c('southern_us','chinese','thai')], aes(x = ingredient_token, y = TFICF, fill = cuisine)) + 
   geom_bar(stat = 'identity') +
   facet_grid(cols = vars(cuisine),scales = 'free') +
   theme_minimal() +
   theme(axis.text.x=element_text(angle=90,
                                  vjust = .2)) 
+ggsave(plot = sample_tficf,filename = "./plots/ingredient_freq_plot.png")
 
 TFICF = sort(train_data_sum$TFICF,decreasing = T)[1:1000]
 
