@@ -8,27 +8,35 @@ train_test = get_train_data() %>%
   create_train_test(test_prop = .25, write = T)
 
 cuisine_freq = table(train_test$train_dt_y)
-new_wts = 1/(cuisine_freq/min(cuisine_freq))
+samp_prop = .8
+equal_samp_size = round(min(cuisine_freq)*samp_prop)
 
-rf_wts_1 = randomForest(x = train_test$train_dt_x,
-                  y = train_test$train_dt_y,
-                  ntree = 2500,
-                  mtry = 10, 
-                  classwt = new_wts)
+samp_vec = rep(equal_samp_size, length(cuisine_freq))
+names(samp_vec) = names(cuisine_freq)
 
-new_wts = log(cuisine_freq/min(cuisine_freq))
-new_wts[is.infinite(new_wts)] = 1
-new_wts[new_wts < 1] = 1
-new_wts = 1/new_wts
+rf_samp_1 = randomForest(x = train_test$train_dt_x,
+                        y = train_test$train_dt_y,
+                        ntree = 2500,
+                        mtry = 10,
+                        sampsize = samp_vec,
+                        replace = F)
 
-rf_wts_2 = randomForest(x = train_test$train_dt_x,
-                  y = train_test$train_dt_y,
-                  ntree = 2500,
-                  mtry = 10, 
-                  classwt = new_wts)
+cuisine_freq = table(train_test$train_dt_y)
+samp_prop = .8
+equal_samp_size = round(cuisine_freq*samp_prop)
+new_sample_prop = log(equal_samp_size/min(equal_samp_size))
+new_sample_prop[new_sample_prop<1]= 1
+new_samp_vec = round(new_sample_prop*min(equal_samp_size))
 
-predictions_1 = predict(rf_wts_1,train_test$test_dt_x)
-predictions_2 = predict(rf_wts_2,train_test$test_dt_x)
+rf_samp_2 = randomForest(x = train_test$train_dt_x,
+                        y = train_test$train_dt_y,
+                        ntree = 2500,
+                        mtry = 10, 
+                        sampsize = new_samp_vec,
+                        replace = F)
+
+predictions_1 = predict(rf_samp_1,train_test$test_dt_x)
+predictions_2 = predict(rf_samp_2,train_test$test_dt_x)
 
 confusion_calc = caret::confusionMatrix(data = predictions_2,
                                         reference = train_test$test_dt_y)
@@ -40,7 +48,7 @@ cat('raw accuracy : ', acc)
 cat('balanced accuracy : ', balanced_acc)
 
 output = data.table(actual = train_test$test_dt_y,
-                    predicted = predictions)
+                    predicted = predictions_1)
 
 output[,correct := actual == predicted]
 group_accuracy = output[,.(accuracy = round(mean(correct),3)*100,
